@@ -1,0 +1,55 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: Image service assignment
+
+Globals:
+  Function:
+    Runtime: python3.11
+    Timeout: 15
+    MemorySize: 512
+    Environment:
+      Variables:
+        S3_BUCKET: image-service-bucket
+        DDB_TABLE: images
+
+Resources:
+  ImageBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: image-service-bucket
+
+  ImagesTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: images
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: image_id
+          AttributeType: S
+      KeySchema:
+        - AttributeName: image_id
+          KeyType: HASH
+
+  ImageApiFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: .
+      Handler: app.handler.lambda_handler
+      Policies:
+        - S3CrudPolicy:
+            BucketName: image-service-bucket
+        - DynamoDBCrudPolicy:
+            TableName: images
+      Events:
+        CreateImage:
+          Type: Api
+          Properties: {Path: /images, Method: post}
+        ListImages:
+          Type: Api
+          Properties: {Path: /images, Method: get}
+        GetImage:
+          Type: Api
+          Properties: {Path: /images/{image_id}, Method: get}
+        DeleteImage:
+          Type: Api
+          Properties: {Path: /images/{image_id}, Method: delete}
