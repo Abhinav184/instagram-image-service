@@ -5,7 +5,7 @@ import os
 os.environ['AWS_DEFAULT_REGION'] = 'us-east-1'
 os.environ['S3_BUCKET'] = 'image-service-bucket'
 os.environ['DDB_TABLE'] = 'images'
-os.environ.pop('AWS_ENDPOINT_URL', None)
+os.environ['AWS_ENDPOINT_URL'] = ''
 
 import boto3
 import pytest

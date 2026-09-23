@@ -1,12 +1,15 @@
 services:
   localstack:
-    image: localstack/localstack:latest
+    image: localstack/localstack:3.8.1
+
     ports:
       - "4566:4566"
+
     environment:
       - SERVICES=s3,dynamodb
       - DEBUG=0
       - AWS_DEFAULT_REGION=us-east-1
+
     volumes:
       - "./scripts/init_localstack.sh:/etc/localstack/init/ready.d/init_localstack.sh"
       - "/var/run/docker.sock:/var/run/docker.sock"

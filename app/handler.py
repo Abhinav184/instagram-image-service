@@ -2,19 +2,29 @@ import base64
 import json
 import uuid
 from datetime import datetime, timezone
-
+from decimal import Decimal
 from .config import MAX_IMAGE_BYTES
 from .repository import put_image, get_image, delete_image, list_images
 from .storage import put_image_bytes, delete_image_object, presigned_download_url
 
 
-def _response(status, body):
-    return {
-        'statusCode': status,
-        'headers': {'Content-Type': 'application/json'},
-        'body': json.dumps(body),
-    }
+def _json_serializer(obj):
+    if isinstance(obj, Decimal):
+        if obj % 1 == 0:
+            return int(obj)
+        return float(obj)
 
+    raise TypeError(
+        f"Object of type {type(obj).__name__} is not JSON serializable"
+    )
+
+
+def _response(status_code, body=None):
+    return {
+        'statusCode': status_code,
+        'headers': {'Content-Type': 'application/json'},
+        'body': json.dumps(body, default=_json_serializer),
+    }
 
 def _json_body(event):
     raw = event.get('body') or '{}'
@@ -69,8 +79,8 @@ def create_image(event):
     try:
         put_image_bytes(s3_key, image_bytes, body['content_type'])
         put_image(item)
-    except Exception:
-        # Compensating action: avoid leaving an orphaned S3 object if metadata persistence fails.
+    except Exception as e:
+        print("UPLOAD ERROR:", repr(e))
         try:
             delete_image_object(s3_key)
         except Exception:
